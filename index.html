@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Machine Test</title>
+  <meta charset="utf-8">
+  <base href="/">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+  <link rel="stylesheet" href="noteStyles.css">
+</head>
+
+<body>
+  <h1 class="noteList">Note-taking App</h1>
+  <div id="noteListId">
+    <h2>Note List</h2>
+    <table class="ui celled table" id="notesTable">
+      <thead>
+        <tr id="noteTableRow">
+          <th id="noteTableTitle">Title</th>
+          <th id="noteTableDesc">Description</th>
+          <th id="noteTableCreated">Created At</th>
+          <th id="notesTableAction">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+
+      </tbody>
+
+    </table>
+  </div>
+  <div class="createNote" id="createNoteId">
+    <button class="ui button" id="createNoteBtnId" onclick="createNote()">Create a note</button>
+    <div class="ui basic modal" id="addNoteModal">
+      <div class="ui icon header">
+        <i class="archive icon"></i>
+
+      </div>
+      <div class="content">
+        <div class="ui fluid icon input">
+          <input type="text" placeholder="Title" id="noteTitle">
+        </div>
+        <div class="ui fluid action input">
+          <input type="text" placeholder="Description" id="noteDesc">
+        </div>
+      </div>
+      <div class="actions">
+        <div class="ui green ok inverted button" onclick="submitNote('POST')">
+          <i class="checkmark icon"></i>
+          Submit
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="editNote" id="editNoteId">
+    <div class="ui basic modal" id="editNoteModal">
+      <div class="ui icon header">
+        <i class="archive icon"></i>
+
+      </div>
+      <div class="content">
+        <div class="ui fluid icon input">
+          <input type="text" placeholder="Title" id="editNoteTitle">
+        </div>
+        <div class="ui fluid action input">
+          <input type="text" placeholder="Description" id="editNoteDesc">
+        </div>
+      </div>
+      <div class="actions">
+        <div class="ui green ok inverted button" onclick="editColumnController()">
+          <i class="checkmark icon"></i>
+          Submit
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script>
+    let data;
+    $(document).ready(function () {
+      $.ajax({
+        method: "GET",
+        url: "http://localhost:5000/notes",
+        success: function (response) {
+          data = response.data;
+          createList(response.data);
+
+        },
+        error: function (err) {
+          console.log(err);
+        }
+      })
+    });
+
+    function deleteColumnController(event) {
+      const id = event.target.id.split("-")[1];
+      $.ajax({
+        method: "DELETE",
+        url: `http://localhost:5000/notes/${id}`,
+        success: function () {
+          alert("Deleted Successfully");
+          window.location.reload();
+        },
+        error: function () {
+          alert("An error has occured");
+        }
+      })
+    }
+
+    function editNotes(event) {
+      const id = event.target.id.split("-")[1];
+      const filteredData = data.filter(d => d._id == id);
+      document.getElementById("editNoteTitle").value = filteredData[0].title;
+      document.getElementById("editNoteDesc").value = filteredData[0].description;
+      localStorage.setItem("id", id);
+      document.getElementById("editNoteModal").style.display = "block";
+    }
+
+    function editColumnController() {
+      const id = localStorage.getItem("id");
+
+      var title = document.getElementById("editNoteTitle").value;
+      var desc = document.getElementById("editNoteDesc").value;
+      $.ajax({
+        method: "PUT",
+        url: `http://localhost:5000/notes/${id}`,
+        data: {
+          title: title,
+          description: desc
+        },
+        success: function (response) {
+          alert("Updated Successfully");
+          window.location.reload();
+        },
+        error: function (err) {
+          alert("An error has occured");
+        }
+      })
+    }
+
+    function createList(notes) {
+      notes.map(element => {
+        const row = document.createElement('tr');
+        const titleColumn = document.createElement("td");
+        titleColumn.innerHTML = element.title;
+        const descriptionColumn = document.createElement("td");
+        descriptionColumn.innerHTML = element.description;
+        const createdAtRColumn = document.createElement("td");
+        createdAtRColumn.innerHTML = element.createdAt;
+        const editRColumn = document.createElement("button");
+        editRColumn.innerHTML = "Edit";
+        editRColumn.id = `editRowNote-${element._id}`
+        editRColumn.onclick = editNotes;
+        const deleteColumn = document.createElement("button");
+        deleteColumn.id = `deleteRowNote-${element._id}`
+        deleteColumn.innerHTML = "Delete";
+        deleteColumn.onclick = deleteColumnController;
+        row.appendChild(titleColumn);
+        row.appendChild(descriptionColumn);
+        row.appendChild(createdAtRColumn);
+        row.appendChild(editRColumn);
+        row.appendChild(deleteColumn);
+        $("#tableBody").append(row);
+
+      });
+
+
+    }
+    function createNote() {
+      document.getElementById("addNoteModal").style.display = "block";
+    }
+
+    function submitNote() {
+      var title = document.getElementById("noteTitle").value;
+      var desc = document.getElementById("noteDesc").value;
+      $.ajax({
+        method: "POST",
+        url: "http://localhost:5000/notes",
+        data: {
+          title: title,
+          description: desc
+        },
+        success: function (response) {
+          console.log(response);
+          window.location.reload();
+        },
+        error: function (err) {
+          console.log(err);
+        }
+      })
+    }
+  </script>
+</body>
+
+</html>
